@@ -50,6 +50,9 @@ model products {
   product_details  product_details?
   product_sliders product_sliders?
   product_wishes product_wishes[]
+  product_carts product_carts[]
+  product_reviews product_reviews[]
+  invoice_products invoice_products[]
 
 }
 
@@ -95,6 +98,9 @@ model users {
   updated_at        DateTime           @default(now()) @db.Timestamp(0) @updatedAt
   customer_profiles  customer_profiles?
   product_wishes product_wishes[]
+  product_carts product_carts[]
+  invoices invoices[]
+  invoice_products invoice_products[]
 
 }
 
@@ -120,7 +126,7 @@ model customer_profiles {
   created_at      DateTime          @default(now()) @db.Timestamp(0)
   updated_at      DateTime          @default(now()) @db.Timestamp(0) @updatedAt
   users           users             @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
-
+  product_reviews product_reviews[]
 }
 
 
@@ -137,6 +143,121 @@ model product_wishes {
 }
 
 
+model product_carts {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt   @db.UnsignedBigInt
+  product_id BigInt   @db.UnsignedBigInt
+  color      String   @db.VarChar(200)
+  size       String   @db.VarChar(200)
+  qty        String   @db.VarChar(200)
+  price      String   @db.VarChar(200)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+  products   products @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+}
+
+model product_reviews {
+  id                BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  description       String            @db.VarChar(1000)
+  rating            String            @db.VarChar(10)
+  customer_id       BigInt            @db.UnsignedBigInt
+  product_id        BigInt            @db.UnsignedBigInt
+  created_at        DateTime          @default(now()) @db.Timestamp(0)
+  updated_at        DateTime          @default(now()) @db.Timestamp(0)
+  customer_profiles customer_profiles @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  products          products          @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+}
+
+
+model sslcommerz_accounts {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  store_id     String    @db.VarChar(255)
+  store_passwd String    @db.VarChar(255)
+  currency     String    @db.VarChar(255)
+  success_url  String    @db.VarChar(255)
+  fail_url     String    @db.VarChar(255)
+  cancel_url   String    @db.VarChar(255)
+  ipn_url      String    @db.VarChar(255)
+  init_url     String    @db.VarChar(255)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0) @updatedAt
+}
+
+model policies {
+  id   BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  type policies_type
+  des  String        @db.LongText
+  created_at        DateTime          @default(now()) @db.Timestamp(0)
+  updated_at        DateTime          @default(now()) @db.Timestamp(0) @updatedAt
+}
+
+
+model invoices {
+  id               BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  total            String                   @db.VarChar(50)
+  vat              String                   @db.VarChar(50)
+  payable          String                   @db.VarChar(50)
+  cus_details      String                   @db.VarChar(500)
+  ship_details     String                   @db.VarChar(500)
+  tran_id          String                   @db.VarChar(100)
+  val_id           String                   @default("0") @db.VarChar(100)
+  delivery_status  invoices_delivery_status
+  payment_status   String                   @db.VarChar(255)
+  user_id          BigInt                   @db.UnsignedBigInt
+  created_at       DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at       DateTime                 @default(now()) @db.Timestamp(0)
+  invoice_products invoice_products[]
+  users            users                    @relation(fields: [user_id], references: [id], map: "invoices_user_id_foreign")
+
+  @@index([user_id], map: "invoices_user_id_foreign")
+}
+
+
+
+
+model invoice_products {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  invoice_id BigInt   @db.UnsignedBigInt
+  product_id BigInt   @db.UnsignedBigInt
+  user_id    BigInt   @db.UnsignedBigInt
+  qty        String   @db.VarChar(50)
+  sale_price String   @db.VarChar(50)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+  invoices   invoices @relation(fields: [invoice_id], references: [id], map: "invoice_products_invoice_id_foreign")
+  products   products @relation(fields: [product_id], references: [id], map: "invoice_products_product_id_foreign")
+  users      users    @relation(fields: [user_id], references: [id], map: "invoice_products_user_id_foreign")
+
+  @@index([invoice_id], map: "invoice_products_invoice_id_foreign")
+  @@index([product_id], map: "invoice_products_product_id_foreign")
+  @@index([user_id], map: "invoice_products_user_id_foreign")
+}
+
+
+
+
+
+
+enum invoices_delivery_status {
+  Pending
+  Processing
+  Completed
+}
+
+
+
+
+enum policies_type {
+  about
+  refund
+  terms
+  how_to_buy @map("how to buy")
+  contact
+  complain
+}
 
 
 enum products_remark {
